@@ -1,0 +1,7 @@
+app_settings:
+  app_port: 8080
+  debug_mode: true
+
+database:
+  db_host: "postgres-primary"
+  db_name: "users_db"
