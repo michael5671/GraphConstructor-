@@ -9,6 +9,7 @@ class PolyglotGraphBuilder:
         self.graph = nx.DiGraph()
         
         # --- CẤU HÌNH PARSER CHO TỪNG NGÔN NGỮ ---
+        # --- CẤU HÌNH PARSER ĐÃ SỬA LỖI ---
         self.parsers = {
             '.py': {
                 'lang': get_language('python'),
@@ -28,30 +29,37 @@ class PolyglotGraphBuilder:
                 'lang': get_language('yaml'),
                 'parser': get_parser('yaml'),
                 'queries': {
-                    # Lấy các Key chính trong YAML
                     'defs': """
                         (block_mapping_pair key: (flow_node) @name) @def.key
                     """,
-                    'calls': "" # YAML thường không "gọi" hàm, chỉ định nghĩa
+                    'calls': "" 
                 }
             },
-            '.yml': { 'alias': '.yaml' }, # Trỏ về cấu hình .yaml
+            '.yml': { 'alias': '.yaml' },
+            
+            # [FIXED] Dockerfile: Bỏ field "image:", chỉ match node con (image_spec)
             'Dockerfile': {
                 'lang': get_language('dockerfile'),
                 'parser': get_parser('dockerfile'),
                 'queries': {
                     'defs': """
-                        (from_instruction image: (image_spec) @name) @def.image
+                        (from_instruction (image_spec) @name) @def.image
                     """,
                     'calls': ""
                 }
             },
-            '.tf': { # Terraform / HCL
+            
+            # [FIXED] Terraform/HCL: Bỏ field "type:" và "labels:", dựa vào thứ tự node con
+            # Cấu trúc thường là: block -> identifier (resource type) -> string_lit (name)
+            '.tf': { 
                 'lang': get_language('hcl'),
                 'parser': get_parser('hcl'),
                 'queries': {
                     'defs': """
-                        (block type: (identifier) @type labels: (string_lit) @name) @def.resource
+                        (block 
+                            (identifier) @type 
+                            (string_lit) @name
+                        ) @def.resource
                     """,
                     'calls': ""
                 }
@@ -246,7 +254,7 @@ class PolyglotGraphBuilder:
         return yaml.dump(repo_data, sort_keys=False, allow_unicode=True)
 if __name__ == "__main__":
     # Thay đường dẫn tới repo của bạn
-    REPO_PATH = "./simpler_repo/mini_polyglot_repo" 
+    REPO_PATH = "./my_simple_repo" 
     
     builder = PolyglotGraphBuilder(REPO_PATH)
     builder.build()
