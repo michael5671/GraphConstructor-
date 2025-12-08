@@ -1,0 +1,81 @@
+- path: Dockerfile
+  source_code: 'FROM python:3.9-slim
+
+
+    WORKDIR /app
+
+
+    COPY . .
+
+
+    # Install dependencies if any
+
+    RUN pip install --no-cache-dir -r requirements.txt
+
+
+    # Start the application
+
+    # Cross-reference: Trỏ tới file src/main.py
+
+    CMD ["python", "src/main.py"]
+
+    '
+  definitions:
+  - python:3.9-slim
+- path: infra/main.tf
+  source_code: "resource \"aws_instance\" \"app_server\" {\n  ami           = \"ami-0c55b159cbfafe1f0\"\
+    \n  instance_type = \"t2.micro\"\n\n  tags = {\n    Name = \"PolyglotAppServer\"\
+    \n    Role = \"worker\"\n  }\n}\n\nvariable \"app_port\" {\n  description = \"\
+    Port for the application to run\"\n  default     = 8080\n}\n"
+  definitions:
+  - aws_instance
+  - app_server
+  - app_port
+  references_to:
+  - app_settings.app_port
+- path: src/utils.py
+  source_code: "def format_user_data(username, email):\n    \"\"\"\n    Format user\
+    \ information into a standardized dictionary.\n    Useful for logging and database\
+    \ insertion.\n    \"\"\"\n    return {\n        \"user\": username.lower(),\n\
+    \        \"contact\": email.strip(),\n        \"status\": \"active\"\n    }\n\n\
+    def get_db_connection_string(host, port):\n    \"\"\"Generates the connection\
+    \ string for PostgreSQL.\"\"\"\n    return f\"postgresql://user:pass@{host}:{port}/db\"\
+    \n"
+  definitions:
+  - format_user_data
+  - get_db_connection_string
+  references_to:
+  - database
+- path: src/main.py
+  source_code: "import os\nfrom src.utils import format_user_data, get_db_connection_string\n\
+    \nclass AppService:\n    def __init__(self):\n        # Giả lập việc đọc config.\
+    \ \n        # Chuỗi 'app_port' và 'db_host' ở đây sẽ giúp Graph Builder \n   \
+    \     # nối dây sang file settings.yaml\n        self.port = os.getenv(\"APP_PORT\"\
+    , \"app_port\") \n        self.db_host = \"db_host\"\n\n    def run(self):\n \
+    \       print(f\"Starting service on {self.port}...\")\n        \n        # Gọi\
+    \ hàm từ utils.py\n        user_info = format_user_data(\"GiaPhu\", \"admin@example.com\"\
+    )\n        conn = get_db_connection_string(self.db_host, 5432)\n        \n   \
+    \     print(f\"Connected to {conn} with user: {user_info}\")\n\nif __name__ ==\
+    \ \"__main__\":\n    service = AppService()\n    service.run()\n"
+  definitions:
+  - AppService
+  - __init__
+  - run
+  references_to:
+  - app_port
+  - app_settings.app_port
+  - format_user_data
+  - get_db_connection_string
+  - database.db_host
+- path: config/settings.yaml
+  source_code: "app_settings:\n  app_port: 8080\n  debug_mode: true\n\ndatabase:\n\
+    \  db_host: \"postgres-primary\"\n  db_name: \"users_db\"\n"
+  definitions:
+  - app_settings
+  - app_settings.app_port
+  - app_settings.debug_mode
+  - database
+  - database.db_host
+  - database.db_name
+  references_to:
+  - app_port

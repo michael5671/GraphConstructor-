@@ -1,0 +1,59 @@
+flowchart TD
+    subgraph cluster_Dockerfile ["Dockerfile (docker)"]
+        Dockerfile["📄 Dockerfile"]
+        style Dockerfile fill:#f9f,stroke:#333,stroke-width:2px
+        Dockerfile__python_3_9_slim("⚙️ python:3.9-slim")
+        Dockerfile --- Dockerfile__python_3_9_slim
+    end
+    subgraph cluster_infra_main_tf ["main.tf (.tf)"]
+        infra_main_tf["📄 main.tf"]
+        style infra_main_tf fill:#f9f,stroke:#333,stroke-width:2px
+        infra_main_tf__aws_instance("⚙️ aws_instance")
+        infra_main_tf --- infra_main_tf__aws_instance
+        infra_main_tf__app_server("⚙️ app_server")
+        infra_main_tf --- infra_main_tf__app_server
+        infra_main_tf__app_port("⚙️ app_port")
+        infra_main_tf --- infra_main_tf__app_port
+    end
+    subgraph cluster_src_utils_py ["utils.py (.py)"]
+        src_utils_py["📄 utils.py"]
+        style src_utils_py fill:#f9f,stroke:#333,stroke-width:2px
+        src_utils_py__format_user_data("🔧 format_user_data")
+        src_utils_py --- src_utils_py__format_user_data
+        src_utils_py__get_db_connection_string("🔧 get_db_connection_string")
+        src_utils_py --- src_utils_py__get_db_connection_string
+    end
+    subgraph cluster_src_main_py ["main.py (.py)"]
+        src_main_py["📄 main.py"]
+        style src_main_py fill:#f9f,stroke:#333,stroke-width:2px
+        src_main_py__AppService("🔧 AppService")
+        src_main_py --- src_main_py__AppService
+        src_main_py____init__("🔧 __init__")
+        src_main_py --- src_main_py____init__
+        src_main_py__run("🔧 run")
+        src_main_py --- src_main_py__run
+    end
+    subgraph cluster_config_settings_yaml ["settings.yaml (.yaml)"]
+        config_settings_yaml["📄 settings.yaml"]
+        style config_settings_yaml fill:#f9f,stroke:#333,stroke-width:2px
+        config_settings_yaml__app_settings("⚙️ app_settings")
+        config_settings_yaml --- config_settings_yaml__app_settings
+        config_settings_yaml__app_settings_app_port("⚙️ app_settings.app_port")
+        config_settings_yaml --- config_settings_yaml__app_settings_app_port
+        config_settings_yaml__app_settings_debug_mode("⚙️ app_settings.debug_mode")
+        config_settings_yaml --- config_settings_yaml__app_settings_debug_mode
+        config_settings_yaml__database("⚙️ database")
+        config_settings_yaml --- config_settings_yaml__database
+        config_settings_yaml__database_db_host("⚙️ database.db_host")
+        config_settings_yaml --- config_settings_yaml__database_db_host
+        config_settings_yaml__database_db_name("⚙️ database.db_name")
+        config_settings_yaml --- config_settings_yaml__database_db_name
+    end
+    infra_main_tf -.-> config_settings_yaml__app_settings_app_port
+    src_utils_py -.-> config_settings_yaml__database
+    src_main_py -.-> infra_main_tf__app_port
+    src_main_py -.-> config_settings_yaml__app_settings_app_port
+    src_main_py -.-> src_utils_py__format_user_data
+    src_main_py -.-> src_utils_py__get_db_connection_string
+    src_main_py -.-> config_settings_yaml__database_db_host
+    config_settings_yaml -.-> infra_main_tf__app_port
